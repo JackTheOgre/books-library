@@ -12,12 +12,15 @@ public class BooksLibrary {
     private static final String user = "root";
     private static final String password = "root_password";
     private static final String INP = "blib>";
+    //TODO: Добавить помощь по каждой команде. Т.е. "показать -помощь" или "добавить -помощь"("помощь -помощь" ы).
     private static final String HELP = "- Чтобы внести новую книгу в базу, напишите: \n" +
-            "    Добавить [Имя_автора] [Фамилия_автора] [Название книги] [Расположение]\n" +
+            "    добавить [Имя_автора] [Фамилия_автора] [Название книги] [Расположение]\n" +
             "- Чтобы узнать расположение книги, введите, заполняя неизвестные вам характеристики вопросом:\n" +
-            "    Найти [Имя_автора] [Фамилия_автора] [Название книги] \n" +
+            "    найти [Имя_автора] [Фамилия_автора] [Название книги] \n" +
             "- Чтобы завершить использование программой, напишите:\n" +
-            "   \"ВЫЙТИ\" или \"FINISH\"\n" +
+            "   \"выйти\" или \"finish\"\n" +
+            "- Чтобы вывести всю библиотеку на экран, напишите:" +
+            "   \"показать\" или \"show\"\n" +//TODO: в этой же команде указывать порядок
             "- Чтобы повторить последний запрос, напишите \"last\" или \"посл\"\n" +
             INP;
 
@@ -25,7 +28,7 @@ public class BooksLibrary {
     private static BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
     private static PrintWriter out = new PrintWriter(System.out);
     private static String[][] table;
-    // JDBC variables for opening and managing connection
+    private static ArrayList<String> printable = new ArrayList<>();
     private static Connection con;
     private static Statement stmt;
     private static ResultSet rs;
@@ -41,8 +44,8 @@ public class BooksLibrary {
         COUNT = count(p);
         boolean correct = false, doneThings = false, inputIsLast = false;
         String query;
-        fillTable(p);
-        out.print("Чтобы узнать возможные команды, напишите ПОМОЩЬ или HELP.\n" +
+        fillTable(p,"last_name");
+        out.print("Чтобы узнать возможные команды, напишите \"помощь\" или \"help\".\n" +
                 INP);
         out.flush();
         String last = "";
@@ -59,6 +62,10 @@ public class BooksLibrary {
             }
             if (input.toLowerCase().equals("help") || input.toLowerCase().equals("помощь")) {
                 out.print(HELP);
+                correct = true;
+            }
+            if (input.toLowerCase().equals("показать") || input.toLowerCase().equals("show")) {
+                printTable();
                 correct = true;
             }
             if (input.toLowerCase().equals("выйти") || input.toLowerCase().equals("finish")) {
@@ -114,7 +121,10 @@ public class BooksLibrary {
             if (count(p) > COUNT) out.print("Успешно добавлено.\n" + INP);
             if (!correct && !inputIsLast) out.print("Некорректный ввод. Попробуйте еще раз.\n" + INP);
             if (!inputIsLast) last = input;
-            if (correct) COUNT = count(p);
+            if (correct) {
+                COUNT = count(p);
+                fillTable(p, "last_name");
+            }
             out.flush();
         }
 
@@ -156,10 +166,10 @@ public class BooksLibrary {
                 String last_name = rs.getString(2);
                 String title = rs.getString(3);
                 String location = rs.getString(4);
-//                int id = rs.getInt(5);
-                out.print("Книга \"" + first_name + " " + last_name + " - " + title + "\" расположена в секции " + location + "\n" + INP);
+                out.print("Книга \"" + first_name + " " + last_name + " - " + title + "\" расположена в секции " + location + "\n");
                 found = true;
             }
+            if(found) out.print(INP);
             if (!found) out.print("К сожалению, не найдено ничего. Попробуйте еще раз." + "\n" + INP);
         } catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
@@ -175,11 +185,15 @@ public class BooksLibrary {
             } catch (SQLException se) { }
         }
     }
-
-    private static void fillTable(Properties p) {//создает таблицу
+    
+    private static void fillTable(Properties p, String order) {//создает таблицу, упорядоченную по %order%
         try {
-
-            String query = "SELECT * FROM books;";
+            String query;
+            if(order==null||order.equals("")) {
+                 query = "SELECT * FROM books;";
+            } else {
+                 query = "SELECT * FROM books ORDER BY "+order+";";
+            }
             con = DriverManager.getConnection(CONNECTION, p);
             stmt = con.createStatement();
             table = new String[COUNT + 1][5];//5 или нет?
@@ -210,6 +224,7 @@ public class BooksLibrary {
                 table[id][2] = location;
                 table[id][3] = first_name;
                 table[id][4] = last_name;
+                printable.add(table[id][0]+ " - " + table[id][1] + " -  " + table[id][2]);
 //                out.print(author.toString()+ " - " + title + ", " + location + " " + "\n");
             }
         } catch (SQLException sqlEx) {
@@ -226,7 +241,14 @@ public class BooksLibrary {
             } catch (SQLException se) {}
         }
     }
-
+    
+    private static void printTable() {
+        for (int i = 1; i < printable.size(); i++) {
+            out.print(printable.get(i) + "\n");
+        }
+        out.print(INP);
+    }
+    
     private static int count(Properties p) {//возвращает количество строк в таблице
         try {
 
