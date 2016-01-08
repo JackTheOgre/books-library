@@ -19,11 +19,10 @@ public class BooksLibrary {
             "- Чтобы завершить использование программой, напишите:\n" +
             "   \"ВЫЙТИ\" или \"FINISH\"\n" +
             "- Чтобы повторить последний запрос, напишите \"last\" или \"посл\"\n" +
-            "На заметку: К сожалению, по неизвестным причинам при абсолютно корректном вводе может \n" +
-            "выдать ошибку. В таком случае просто попробуйте еще раз. Перед запросом можете нажать Enter с пустой(лучше не пустой строкой).\n" +
             INP;
 
-    private static Scanner in = new Scanner(System.in);
+//    private static Scanner in = new Scanner(System.in);
+    private static BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
     private static PrintWriter out = new PrintWriter(System.out);
     private static String[][] table;
     // JDBC variables for opening and managing connection
@@ -34,7 +33,7 @@ public class BooksLibrary {
     private static String input;
 
     public static void main(String[] args) throws
-            ClassNotFoundException, SQLException {
+            ClassNotFoundException, SQLException, IOException {
         Class.forName(dbClassName);
         Properties p = new Properties();
         p.put("user", user);
@@ -50,11 +49,10 @@ public class BooksLibrary {
         while (true) {
             correct = false;
             inputIsLast = false;
-            input = in.nextLine();
+            input = in.readLine();
             input = input.trim();
             input = input.replace("�", "");
             input = input.replace("ё", "е");
-            out.print("----UR INPUT IS:" + input + " -----\n");
             if (input.toLowerCase().equals("last") || input.toLowerCase().equals("посл")) {
                 input = last;
                 inputIsLast = true;
@@ -82,10 +80,10 @@ public class BooksLibrary {
                 query = "INSERT INTO books VALUE ('" + split[1] + "', '" + split[2] + "', '" + split[3] + "', '" + split[split.length - 1] + "', NULL);";
                 add(query, p);
 //                out.println(query);
-            } else if (split[0].toLowerCase().equals("найти") && split.length > 3) {//TODO: поиск по части названия
+            } else if (split[0].toLowerCase().equals("найти") && split.length > 3) {
 
                 if (split.length > 4) {//Собирание составного названия в одну строку
-                    for (int i = 4; i < split.length; i++) {//todo: Удалять из строк символ �
+                    for (int i = 4; i < split.length; i++) {
                         split[3] = split[3].concat(" " + split[i]);
                     }
                 }
@@ -113,7 +111,7 @@ public class BooksLibrary {
                 else out.print("Некорректный ввод. Убедитесь, что все написано по следующему шаблону:\n" +
                         "    Найти [Имя_автора] [Фамилия_автора] [Название книги]");
             }
-            if (count(p) > COUNT) out.print("Успешно добавлено\n" + INP);
+            if (count(p) > COUNT) out.print("Успешно добавлено.\n" + INP);
             if (!correct && !inputIsLast) out.print("Некорректный ввод. Попробуйте еще раз.\n" + INP);
             if (!inputIsLast) last = input;
             if (correct) COUNT = count(p);
@@ -137,15 +135,12 @@ public class BooksLibrary {
         } catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
         } finally {
-            //close connection ,stmt and result20\
-            // set here
             try {
                 con.close();
-            } catch (SQLException se) { /*can't do anything */ }
+            } catch (SQLException se) {  }
             try {
                 stmt.close();
-            } catch (SQLException se) { /*can't do anything */ }
-//            out.print("Успешно добавлено." + INP);//TODO: Добавить условие
+            } catch (SQLException se) { }
         }
     }
 
@@ -169,16 +164,15 @@ public class BooksLibrary {
         } catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
         } finally {
-            //close connection ,stmt and resultset here
             try {
                 con.close();
-            } catch (SQLException se) { /*can't do anything */ }
+            } catch (SQLException se) {  }
             try {
                 stmt.close();
-            } catch (SQLException se) { /*can't do anything */ }
+            } catch (SQLException se) { }
             try {
                 rs.close();
-            } catch (SQLException se) { /*can't do anything */ }
+            } catch (SQLException se) { }
         }
     }
 
@@ -216,22 +210,20 @@ public class BooksLibrary {
                 table[id][2] = location;
                 table[id][3] = first_name;
                 table[id][4] = last_name;
-//                int id = rs.getInt(5);
 //                out.print(author.toString()+ " - " + title + ", " + location + " " + "\n");
             }
         } catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
         } finally {
-            //close connection ,stmt and resultset here
             try {
                 con.close();
-            } catch (SQLException se) { /*can't do anything */ }
+            } catch (SQLException se) { }
             try {
                 stmt.close();
-            } catch (SQLException se) { /*can't do anything */ }
+            } catch (SQLException se) { }
             try {
                 rs.close();
-            } catch (SQLException se) { /*can't do anything */ }
+            } catch (SQLException se) {}
         }
     }
 
@@ -250,7 +242,6 @@ public class BooksLibrary {
         } catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
         } finally {
-            //close connection ,stmt and resultset here
             try {
                 con.close();
             } catch (SQLException se) {
@@ -275,6 +266,6 @@ public class BooksLibrary {
         }
     }
 //TODO: Добавить такие функции как: показать таблицу всех или с таким-то автором, на такой-то полке и т.п.
-    //TODO:Улучшить функцию поиска обяз-но. Примеры: Марк Твен = М. Твен, Д. Букин = Денис Букин
+    //TODO:Улучшить функцию поиска обяз-но. Примеры: Марк Твен => М. Твен, Д. Букин => Денис Букин
     //если имеет точку в имени, то искать по author, если нет, то отдельно имя и фамилию
 }
