@@ -12,6 +12,7 @@ public class BooksLibrary {
     private static final String user = "root";
     private static final String password = "root_password";
     private static final String INP = "blib>";
+    private static final String DEFAULT_ORDER = "last_name,title";
     //TODO: Добавить помощь по каждой команде. Т.е. "показать -помощь" или "добавить -помощь"("помощь -помощь" ы).
     private static final String HELP = "- Чтобы внести новую книгу в базу, напишите: \n" +
             "    добавить [Имя_автора] [Фамилия_автора] [Название книги] [Расположение]\n" +
@@ -37,25 +38,29 @@ public class BooksLibrary {
 
     public static void main(String[] args) throws
             ClassNotFoundException, SQLException, IOException {
+
+        //настройка соединения
         Class.forName(dbClassName);
         Properties p = new Properties();
         p.put("user", user);
         p.put("password", password);
-        COUNT = count(p);
+
+        //инициализация переменных
+        COUNT = count(p);//инициализация последнего индекса а.к.а. количества строчек в таблице
         boolean correct = false, doneThings = false, inputIsLast = false;
         String query;
-        fillTable(p,"last_name");
-        out.print("Чтобы узнать возможные команды, напишите \"помощь\" или \"help\".\n" +
-                INP);
+        fillTable(p,DEFAULT_ORDER);
+        out.print("Чтобы узнать возможные команды, напишите \"помощь\" или \"help\".\n" +INP);
         out.flush();
         String last = "";
+
         while (true) {
             correct = false;
             inputIsLast = false;
             input = in.readLine();
             input = input.trim();
             input = input.replace("�", "");
-            input = input.replace("ё", "е");
+            input = input.replace("ё", "е");//todo: запрос изменения местоположения или любой другой характеристики по айди,
             if (input.toLowerCase().equals("last") || input.toLowerCase().equals("посл")) {
                 input = last;
                 inputIsLast = true;
@@ -72,6 +77,8 @@ public class BooksLibrary {
                 break;
             }
             String[] split = input.split(" ");
+
+            //Запрос на добавление:
             if (split[0].toLowerCase().equals("добавить") && split.length > 4) {
 
                 if (split.length > 4) {//Собирание составного названия в одну строку
@@ -87,7 +94,10 @@ public class BooksLibrary {
                 query = "INSERT INTO books VALUE ('" + split[1] + "', '" + split[2] + "', '" + split[3] + "', '" + split[split.length - 1] + "', NULL);";
                 add(query, p);
 //                out.println(query);
-            } else if (split[0].toLowerCase().equals("найти") && split.length > 3) {
+            }
+
+            //Запрос на поиск:
+            else if (split[0].toLowerCase().equals("найти") && split.length > 3) {
 
                 if (split.length > 4) {//Собирание составного названия в одну строку
                     for (int i = 4; i < split.length; i++) {
@@ -118,12 +128,13 @@ public class BooksLibrary {
                 else out.print("Некорректный ввод. Убедитесь, что все написано по следующему шаблону:\n" +
                         "    Найти [Имя_автора] [Фамилия_автора] [Название книги]");
             }
+
             if (count(p) > COUNT) out.print("Успешно добавлено.\n" + INP);
             if (!correct && !inputIsLast) out.print("Некорректный ввод. Попробуйте еще раз.\n" + INP);
             if (!inputIsLast) last = input;
             if (correct) {
                 COUNT = count(p);
-                fillTable(p, "last_name");
+                fillTable(p, DEFAULT_ORDER);
             }
             out.flush();
         }
@@ -224,7 +235,7 @@ public class BooksLibrary {
                 table[id][2] = location;
                 table[id][3] = first_name;
                 table[id][4] = last_name;
-                printable.add(table[id][0]+ " - " + table[id][1] + " -  " + table[id][2]);
+                printable.add(table[id][0]+ " - " + table[id][1] + " -  " + table[id][2]+"(№"+id+")");
 //                out.print(author.toString()+ " - " + title + ", " + location + " " + "\n");
             }
         } catch (SQLException sqlEx) {
